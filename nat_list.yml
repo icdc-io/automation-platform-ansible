@@ -1,0 +1,6 @@
+- hosts: ovirt_engine
+  gather_facts: no
+  tasks:
+  - name: List OVN NAT
+    shell: >
+      ovn-nbctl lr-nat-list "{{ router | regex_replace('[^a-z0-9_].*','') }}"
