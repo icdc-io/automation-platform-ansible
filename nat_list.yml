@@ -9,11 +9,11 @@
       loop: "{{ routers }}"
       register: nat_results
 
-    - name: Parse and clean output
+    - name: Parse and clean output (remove trailing spaces)
       ansible.builtin.set_fact:
-        lat_nat_list: >-
+        lr_nat_list: >-
           {{
-            lat_nat_list | default([]) +
+            lr_nat_list | default([]) +
             [
               {
                 'router': item.item,
@@ -22,3 +22,7 @@
             ]
           }}
       loop: "{{ nat_results.results }}"
+
+    - name: Output result
+      ansible.builtin.debug:
+        msg: "{{ lr_nat_list }}"
