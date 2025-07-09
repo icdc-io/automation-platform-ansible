@@ -1,7 +1,8 @@
 - hosts: ovirt_engine
   gather_facts: false
-  # vars:
-  #   routers: []
+  vars:
+    routers:
+      - dcz_devel_default
   tasks:
     - name: List OVN NAT for each router
       ansible.builtin.shell: >
@@ -17,7 +18,9 @@
             [
               {
                 'router': item.item,
-                'floating_ips': item.stdout_lines | list | select('match', '^dnat_and_snat') | regex_replace('\s+', ' ')
+                'floating_ips': (
+                  item.stdout_lines | select('match', '^dnat_and_snat') | list
+                ) | map('regex_replace', '\s+', ' ') | map('trim') | list
               }
             ]
           }}
