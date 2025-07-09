@@ -1,6 +1,24 @@
 - hosts: ovirt_engine
-  gather_facts: no
+  gather_facts: false
+  # vars:
+  #   routers: []
   tasks:
-  - name: List OVN NAT
-    shell: >
-      ovn-nbctl lr-nat-list "{{ router | regex_replace('[^a-z0-9_].*','') }}"
+    - name: List OVN NAT for each router
+      ansible.builtin.shell: >
+        ovn-nbctl lr-nat-list "{{ item | regex_replace('[^a-z0-9_].*', '') }}"
+      loop: "{{ routers }}"
+      register: nat_results
+
+    - name: Parse and clean output
+      ansible.builtin.set_fact:
+        lat_nat_list: >-
+          {{
+            lat_nat_list | default([]) +
+            [
+              {
+                'router': item.item,
+                'floating_ips': item.stdout_lines | list | select('match', '^dnat_and_snat') | regex_replace('\s+', ' ')
+              }
+            ]
+          }}
+      loop: "{{ nat_results.results }}"
