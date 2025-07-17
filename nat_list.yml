@@ -1,12 +1,14 @@
 - hosts: ovirt_engine
   gather_facts: false
   vars:
-  #  routers:
-  #    - dcz_devel_default
+    routers:
+      - dcz_devel_default
   tasks:
     - name: List OVN NAT for each router
       ansible.builtin.shell: >
-        ovn-nbctl lr-nat-list "{{ item | regex_replace('[^a-z0-9_].*', '') }}"
+        ovn-nbctl lr-nat-list "{{ router_name }}"
+      vars:
+        router_name: "{{ item | regex_replace('[^a-z0-9_].*', '') }}" # filter input
       loop: "{{ routers }}"
       register: nat_results
 
