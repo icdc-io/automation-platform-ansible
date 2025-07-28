@@ -4,20 +4,20 @@
 
   vars:
     port_id: "{{ port_id | regex_replace('[^a-z0-9_]', '') }}"
-    mac_address: >-
+    x_mac_address: >-
       {{
-        mac_address | regex_replace('^(?:[0-9A-Fa-f]{2}[:-]){5}(?:[0-9A-Fa-f]{2})$', '\\0')
+        mac_address | regex_replace('[0-9a-fA-F:]', '')
                      | default('')
       }}
     ip_address: >-
       {{
-        ip_address | regex_replace('^(?:\\d{1,3}\\.){3}\\d{1,3}$', '\\0')
+        ip_address | regex_replace('[0-9.]', '')
                     | default('')
       }}
 
   tasks:
     - name: Create DHCP Lease
       ansible.builtin.shell: >
-        ovn-nbctl set logical_switch_port "{{ port_id }}" dynamic_addresses="\"{{ mac_address }} {{ ip_address }}\""
+        ovn-nbctl set logical_switch_port "{{ port_id }}" dynamic_addresses="\"{{ x_mac_address }} {{ ip_address }}\""
       register: success
       changed_when: success.rc == 0
