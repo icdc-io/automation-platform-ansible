@@ -1,0 +1,15 @@
+- name: Setup DHCP leases for OVN ports
+  hosts: ovirt_engine
+  gather_facts: false
+
+  vars:
+    x_port_id: "{{ port_id | regex_replace('[^a-z0-9_]', '') }}"
+    x_mac_address: "{{ mac_address | regex_replace('[^0-9a-fA-F:]', '') }}"
+    x_ip_address: "{{ ip_address | regex_replace('[^0-9.]', '') }}"
+
+  tasks:
+    - name: Create DHCP Lease
+      ansible.builtin.shell: >
+        ovn-nbctl set logical_switch_port "{{ x_port_id }}" dynamic_addresses="\"{{ x_mac_address }} {{ x_ip_address }}\""
+      register: success
+      changed_when: success.rc == 0
