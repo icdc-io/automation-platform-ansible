@@ -3,7 +3,7 @@
   gather_facts: false
 
   vars:
-    x_port_id: "{{ port_id | regex_replace('[^a-z0-9_]', '') }}"
+    x_port_id: "{{ port_id | regex_replace('[^a-z0-9-]', '') }}"
     x_mac_address: "{{ mac_address | regex_replace('[^0-9a-fA-F:]', '') }}"
     x_ip_address: "{{ ip_address | regex_replace('[^0-9.]', '') }}"
 
