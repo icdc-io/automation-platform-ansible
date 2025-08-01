@@ -3,11 +3,25 @@
   gather_facts: false
 
   vars:
-    x_port_id: "{{ port_id | regex_replace('[^a-z0-9_]', '') }}"
+    x_nic_id: "{{ nic_id | regex_replace('[^a-z0-9-]', '') }}"
     x_mac_address: "{{ mac_address | regex_replace('[^0-9a-fA-F:]', '') }}"
     x_ip_address: "{{ ip_address | regex_replace('[^0-9.]', '') }}"
 
   tasks:
+    - name: Find port_id by nic_id
+      ansible.builtin.shell: >
+        ovn-nbctl find logical_switch_port external_ids:ovirt_device_id="{{ x_nic_id }}" | grep "^name" | cut -d "\"" -f 2
+      register: port_id_result
+
+    - name: Prepare x_port_id
+      ansible.builtin.set_fact:
+        x_port_id: "{{ port_id_result.stdout }}"
+
+    - name: Fail if port_id is not found
+      ansible.builtin.fail:
+        msg: "Port ID not found for NIC ID: {{ x_nic_id }}"
+      when: x_port_id is not defined or x_port_id == ''
+
     - name: Create DHCP Lease
       ansible.builtin.shell: >
         ovn-nbctl set logical_switch_port "{{ x_port_id }}" dynamic_addresses="\"{{ x_mac_address }} {{ x_ip_address }}\""
