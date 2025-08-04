@@ -7,23 +7,16 @@
     x_nic_id: "{{ nic_id | regex_replace('[^a-z0-9-]', '') }}"
     x_mac_address: "{{ mac_address | regex_replace('[^0-9a-fA-F:]', '') }}"
     x_ip_address: "{{ ip_address | regex_replace('[^0-9.]', '') }}"
+    x_auth_header: "{{ auth_header }}" # TODO add regex to avoid injections
 
   tasks:
-    - name: Prepare variables
-      ansible.builtin.set_fact:
-        ovirt_auth:
-          hostname: localhost
-          username: "{{ username | d('admin@ovirt@internalsso') }}" # admin@internal
-          password: "{{ password }}"
-          insecure: true
-
     - name: Start VM
       ansible.builtin.uri:
         url: "https://localhost/ovirt-engine/api/vms/{{ x_vm_id }}/start"
         headers:
           Accept: application/xml
           Content-Type: application/xml
-          Authorization: "Basic {{ (username + ':' + password) | b64encode }}"
+          Authorization: "{{ x_auth_header }}"
         method: POST
         body: '<action/>'
         validate_certs: false
@@ -37,6 +30,7 @@
       retries: 60
       delay: 1
       ignore_errors: true
+      changed_when: port_id_result.stdout != ""
 
     - name: Find port_id by nic_id
       ansible.builtin.set_fact:
