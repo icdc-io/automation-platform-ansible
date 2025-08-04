@@ -3,13 +3,41 @@
   gather_facts: false
 
   vars:
-    x_port_id: "{{ port_id | regex_replace('[^a-z0-9-]', '') }}"
+    x_vm_id: "{{ vm_id | regex_replace('[^a-z0-9-]', '') }}"
+    x_nic_id: "{{ nic_id | regex_replace('[^a-z0-9-]', '') }}"
     x_mac_address: "{{ mac_address | regex_replace('[^0-9a-fA-F:]', '') }}"
     x_ip_address: "{{ ip_address | regex_replace('[^0-9.]', '') }}"
+    x_auth_header: "{{ auth_header }}" # TODO add regex to avoid injections
 
   tasks:
+    - name: Start VM
+      ansible.builtin.uri:
+        url: "https://localhost/ovirt-engine/api/vms/{{ x_vm_id }}/start"
+        headers:
+          Accept: application/xml
+          Content-Type: application/xml
+          Authorization: "{{ x_auth_header }}"
+        method: POST
+        body: '<action/>'
+        validate_certs: false
+        status_code: [200, 409]
+
+    - name: Wait for port to be ready
+      ansible.builtin.shell: >
+        ovn-nbctl --bare -f csv find logical_switch_port external_ids:ovirt_device_id="{{ x_nic_id }}" | cut -d, -f1
+      register: port_id_result
+      until: port_id_result.stdout != ""
+      retries: 60
+      delay: 1
+      ignore_errors: true
+      changed_when: port_id_result.stdout != ""
+
+    - name: Find port_id by nic_id
+      ansible.builtin.set_fact:
+        port_id: "{{ port_id_result.stdout }}"
+
     - name: Create DHCP Lease
       ansible.builtin.shell: >
-        ovn-nbctl set logical_switch_port "{{ x_port_id }}" dynamic_addresses="\"{{ x_mac_address }} {{ x_ip_address }}\""
+        ovn-nbctl set logical_switch_port "{{ port_id }}" dynamic_addresses="\"{{ x_mac_address }} {{ x_ip_address }}\""
       register: success
       changed_when: success.rc == 0
