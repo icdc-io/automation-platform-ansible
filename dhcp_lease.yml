@@ -26,18 +26,13 @@
       ansible.builtin.shell: >
         ovn-nbctl --bare -f csv find logical_switch_port external_ids:ovirt_device_id="{{ x_nic_id }}" | cut -d, -f1
       register: port_id_result
-      until: port_id_result.stdout != ""
+      until: port_id_result.stdout is match("^[a-f0-9\-]+$")
       retries: 180
       delay: 1
       ignore_errors: true
-      changed_when: port_id_result.stdout != ""
-
-    - name: Find port_id by nic_id
-      ansible.builtin.set_fact:
-        port_id: "{{ port_id_result.stdout }}"
 
     - name: Create DHCP Lease
       ansible.builtin.shell: >
-        ovn-nbctl set logical_switch_port "{{ port_id }}" dynamic_addresses="\"{{ x_mac_address }} {{ x_ip_address }}\""
+        ovn-nbctl set logical_switch_port "{{ port_id_result.stdout }}" dynamic_addresses="\"{{ x_mac_address }} {{ x_ip_address }}\""
       register: success
       changed_when: success.rc == 0
