@@ -10,6 +10,10 @@
     x_auth_header: "{{ auth_header }}" # TODO add regex to avoid injections
 
   tasks:
+    - name: Add initial delay
+      pause:
+        seconds: 60 # Just for debug
+
     - name: Start VM
       ansible.builtin.uri:
         url: "https://localhost/ovirt-engine/api/vms/{{ x_vm_id }}/start"
@@ -26,10 +30,15 @@
       ansible.builtin.shell: >
         ovn-nbctl --bare -f csv find logical_switch_port external_ids:ovirt_device_id="{{ x_nic_id }}" | cut -d, -f1
       register: port_id_result
-      until: port_id_result.stdout is match("^[a-f0-9\-]+$")
+      until: port_id_result.stdout != "" and port_id_result.stdout is match("^[a-f0-9\-]+$")
       retries: 180
       delay: 1
       ignore_errors: true
+
+    - name: Debug port_id_result on each iteration
+      debug:
+        msg: "Iteration result: {{ port_id_result.stdout }}, Attempt: {{ ansible_loop.index }}"
+      when: port_id_result is defined
 
     - name: Create DHCP Lease
       ansible.builtin.shell: >
