@@ -27,7 +27,7 @@
         ovn-nbctl --bare -f csv find logical_switch_port external_ids:ovirt_device_id="{{ x_nic_id }}" | cut -d, -f1
       register: port_id_result
       until: port_id_result.stdout != ""
-      retries: 60
+      retries: 180
       delay: 1
       ignore_errors: true
       changed_when: port_id_result.stdout != ""
