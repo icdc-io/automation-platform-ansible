@@ -10,10 +10,6 @@
     x_auth_header: "{{ auth_header }}" # TODO add regex to avoid injections
 
   tasks:
-    - name: Add initial delay
-      pause:
-        seconds: 60 # Just for debug
-
     - name: Start VM
       ansible.builtin.uri:
         url: "https://localhost/ovirt-engine/api/vms/{{ x_vm_id }}/start"
@@ -25,6 +21,9 @@
         body: '<action/>'
         validate_certs: false
         status_code: [200, 409]
+        until: status_code != 200
+        retries: 30
+        delay: 5
 
     - name: Wait for port to be ready
       ansible.builtin.shell: >
