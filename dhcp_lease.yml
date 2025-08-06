@@ -21,9 +21,10 @@
         body: '<action/>'
         validate_certs: false
         status_code: [200, 409]
-        until: status_code != 200
-        retries: 30
-        delay: 5
+      register: start_ops
+      until: start_ops.status == 200
+      retries: 60
+      delay: 3
 
     - name: Wait for port to be ready
       ansible.builtin.shell: >
@@ -33,11 +34,6 @@
       retries: 180
       delay: 1
       ignore_errors: true
-
-    - name: Debug port_id_result on each iteration
-      debug:
-        msg: "Iteration result: {{ port_id_result.stdout }}, Attempt: {{ ansible_loop.index }}"
-      when: port_id_result is defined
 
     - name: Create DHCP Lease
       ansible.builtin.shell: >
